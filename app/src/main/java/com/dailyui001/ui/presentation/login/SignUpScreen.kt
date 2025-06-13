@@ -124,7 +124,7 @@ fun SignUpScreen(
                             )
                         )
                     },
-                    label = { Text("Enter Email") },
+                    label = "Enter Email",
                     visualTransformation = VisualTransformation.None
                 )
 
@@ -139,7 +139,7 @@ fun SignUpScreen(
                             )
                         )
                     },
-                    label = { Text("Enter Password") },
+                    label ="Enter Password",
                     visualTransformation = if (state.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { actionEvent.invoke(SignUpViewModel.ActionEvent.TogglePasswordVisibility) }) {
@@ -269,7 +269,7 @@ fun SignUpScreen(
                             modifier = Modifier.width(335.sdp),
                             value = state.email,
                             onValueChange = { actionEvent.invoke(SignUpViewModel.ActionEvent.OnEmailChange(it)) },
-                            label = { Text("Enter Email") },
+                            label ="Enter Email",
                             visualTransformation = VisualTransformation.None
                         )
                     }
@@ -292,7 +292,7 @@ fun SignUpScreen(
                             modifier = Modifier.width(335.sdp),
                             value = state.password,
                             onValueChange = { actionEvent.invoke(SignUpViewModel.ActionEvent.OnPasswordChange(it)) },
-                            label = { Text("Enter Password") },
+                            label ="Enter Password",
                             visualTransformation = if (state.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 IconButton(onClick = { actionEvent.invoke(SignUpViewModel.ActionEvent.TogglePasswordVisibility) }) {
