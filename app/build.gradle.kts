@@ -66,4 +66,7 @@ dependencies {
     implementation(libs.kotlinx.serialization)
 //    navigation
     implementation(libs.androidx.navigation.compose)
+    //window sizes
+    implementation (libs.androidx.material3.window.size.class1)
+
 }
