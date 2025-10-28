@@ -8,4 +8,7 @@ sealed class Screens {
     @Serializable
     data object LoginDisplay : Screens()
 
+    @Serializable
+    data object DragItemDisplay : Screens()
+
 }

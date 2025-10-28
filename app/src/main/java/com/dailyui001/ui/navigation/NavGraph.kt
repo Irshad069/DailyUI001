@@ -7,6 +7,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.dailyui001.ui.presentation.dragitem.DragRowScreen
+import com.dailyui001.ui.presentation.dragitem.DragViewModel
 import com.dailyui001.ui.presentation.login.SignUpScreen
 import com.dailyui001.ui.presentation.login.SignUpViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -15,7 +17,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SetUpNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
-    val startDestination = Screens.LoginDisplay
+    val startDestination = Screens.DragItemDisplay
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -57,6 +59,20 @@ fun SetUpNavGraph(
                 },
                 state = viewModel.state,
                 actionEvent = viewModel::actionEvent
+            )
+        }
+        composable<Screens.DragItemDisplay> {
+            val viewModel: DragViewModel = koinViewModel()
+            DragRowScreen(
+                baseUIEvents = viewModel.baseUIEvents,
+                navigation = {
+                    handleNavigation(
+                        action = it,
+                        navController = navController
+                    )
+                },
+                state = viewModel.state,
+                intent = viewModel::intent
             )
         }
     }
