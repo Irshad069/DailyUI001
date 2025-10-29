@@ -83,18 +83,29 @@ class DragViewModel : BaseViewModel() {
                 val from = intent.fromIndex
                 val to = intent.toIndex
 
-                val newList = state.middleItems.toMutableList()
-                val item = newList.removeAt(from)
-                newList.add(to, item)
+                if (from != to) {
+                    val newList = state.middleItems.toMutableList()
 
-                state = state.copy(
-                    middleItems = newList,
-                    draggedItem = null,
-                    draggedOriginalIndex = null,
-                    hoverIndex = null
-                )
+                    // Simple swap instead of remove and add
+                    val temp = newList[from]
+                    newList[from] = newList[to]
+                    newList[to] = temp
+
+                    state = state.copy(
+                        middleItems = newList,
+                        draggedItem = null,
+                        draggedOriginalIndex = null,
+                        hoverIndex = null
+                    )
+                } else {
+                    // No change if dropped at same position
+                    state = state.copy(
+                        draggedItem = null,
+                        draggedOriginalIndex = null,
+                        hoverIndex = null
+                    )
+                }
             }
-
         }
     }
 }

@@ -73,7 +73,8 @@ fun DragRowScreen(
                         intent.invoke(DragIntent.OnDragStart(item, index))
                     },
                     onDragEnd = { newIndex ->
-                        intent.invoke(DragIntent.OnDragEndWithTargetIndex(index, newIndex))
+                        val fromIndex = state.draggedOriginalIndex ?: index
+                        intent.invoke(DragIntent.OnDragEndWithTargetIndex(fromIndex, newIndex))
                     }
                 )
             }
@@ -103,6 +104,98 @@ fun FixedItem(item: DragItem) {
     }
 }
 
+//@Composable
+//fun DraggableItem(
+//    item: DragItem,
+//    currentIndex: Int,
+//    maxIndex: Int,
+//    isDragging: Boolean,
+//    hoverIndex: Int?,
+//    draggedOriginalIndex: Int?,
+//    onDragStart: () -> Unit,
+//    onDragEnd: (Int) -> Unit,
+//) {
+//    val offsetX = remember { Animatable(0f) }
+//    val coroutineScope = rememberCoroutineScope()
+//    var totalDragX by remember { mutableFloatStateOf(0f) }
+//    val itemWidthPx = 86f
+//
+//    Box(
+//        modifier = Modifier
+//            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+//            .zIndex(if (isDragging) 10f else 0f)
+//            .size(70.sdp)
+//            .graphicsLayer {
+//                if (isDragging) {
+//                    scaleX = 1.1f
+//                    scaleY = 1.1f
+//                }
+//            }
+//            .background(
+//                if (isDragging) Color(0xFFFF5252) else Color(0xFF2196F3),
+//                RoundedCornerShape(12.sdp)
+//            )
+//            .pointerInput(item.index) {
+//                detectDragGestures(
+//                    onDragStart = {
+//                        totalDragX = 0f
+//                        onDragStart()
+//                    },
+//                    onDrag = { change, dragAmount ->
+//                        change.consume()
+//                        totalDragX += dragAmount.x
+//
+//                        coroutineScope.launch {
+//                            offsetX.snapTo(totalDragX.coerceIn(-itemWidthPx * maxIndex, itemWidthPx * maxIndex))
+//                        }
+//                    },
+//                    onDragEnd = {
+//                        val movedItems = (totalDragX / itemWidthPx).roundToInt()
+//                        val finalIndex = (currentIndex + movedItems).coerceIn(0, maxIndex)
+//
+//                        coroutineScope.launch {
+//                            offsetX.animateTo(
+//                                0f,
+//                                animationSpec = spring(
+//                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+//                                    stiffness = Spring.StiffnessLow
+//                                )
+//                            )
+//                        }
+//
+//                        onDragEnd(finalIndex)
+//                    },
+//                    onDragCancel = {
+//                        coroutineScope.launch {
+//                            offsetX.animateTo(
+//                                0f,
+//                                animationSpec = spring(
+//                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+//                                    stiffness = Spring.StiffnessLow
+//                                )
+//                            )
+//                        }
+//                        onDragEnd(currentIndex)
+//                    }
+//                )
+//            },
+//        contentAlignment = Alignment.Center
+//    ) {
+//        Column(
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            modifier = Modifier.padding(8.sdp)
+//        ) {
+//            Image(
+//                painter = painterResource(id = item.imageRes),
+//                contentDescription = item.title,
+//                modifier = Modifier.size(32.sdp)
+//            )
+//            Spacer(modifier = Modifier.height(4.sdp))
+//            Text(text = item.title, color = Color.White, fontSize = 12.ssp)
+//        }
+//    }
+//}
+
 @Composable
 fun DraggableItem(
     item: DragItem,
@@ -112,12 +205,37 @@ fun DraggableItem(
     hoverIndex: Int?,
     draggedOriginalIndex: Int?,
     onDragStart: () -> Unit,
-    onDragEnd: (Int) -> Unit, // pass the final target index
+    onDragEnd: (Int) -> Unit,
 ) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
     var totalDragX by remember { mutableFloatStateOf(0f) }
-    val itemWidthPx = 86f // adjust as per item width
+    var dragStartIndex by remember { mutableIntStateOf(currentIndex) }
+    val itemWidthPx = 130f
+
+    val shiftOffset = remember(isDragging, hoverIndex, draggedOriginalIndex, currentIndex) {
+        if (!isDragging && hoverIndex != null && draggedOriginalIndex != null) {
+            when {
+                draggedOriginalIndex < hoverIndex && currentIndex in (draggedOriginalIndex + 1)..hoverIndex -> -itemWidthPx
+                draggedOriginalIndex > hoverIndex && currentIndex in hoverIndex until draggedOriginalIndex -> itemWidthPx
+                else -> 0f
+            }
+        } else {
+            0f
+        }
+    }
+
+    LaunchedEffect(shiftOffset) {
+        if (!isDragging) {
+            offsetX.animateTo(
+                shiftOffset,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -138,6 +256,7 @@ fun DraggableItem(
                 detectDragGestures(
                     onDragStart = {
                         totalDragX = 0f
+                        dragStartIndex = currentIndex
                         onDragStart()
                     },
                     onDrag = { change, dragAmount ->
@@ -145,13 +264,16 @@ fun DraggableItem(
                         totalDragX += dragAmount.x
 
                         coroutineScope.launch {
-                            // Smooth follow
-                            offsetX.snapTo(totalDragX.coerceIn(-itemWidthPx * maxIndex, itemWidthPx * maxIndex))
+                            // Use dragStartIndex for calculating bounds
+                            val maxLeftDrag = -itemWidthPx * dragStartIndex
+                            val maxRightDrag = itemWidthPx * (maxIndex - dragStartIndex)
+
+                            offsetX.snapTo(totalDragX.coerceIn(maxLeftDrag, maxRightDrag))
                         }
                     },
                     onDragEnd = {
                         val movedItems = (totalDragX / itemWidthPx).roundToInt()
-                        val finalIndex = (currentIndex + movedItems).coerceIn(0, maxIndex)
+                        val finalIndex = (dragStartIndex + movedItems).coerceIn(0, maxIndex)
 
                         coroutineScope.launch {
                             offsetX.animateTo(
@@ -163,7 +285,7 @@ fun DraggableItem(
                             )
                         }
 
-                        onDragEnd(finalIndex) // trigger reorder once dropped
+                        onDragEnd(finalIndex)
                     },
                     onDragCancel = {
                         coroutineScope.launch {
@@ -175,7 +297,7 @@ fun DraggableItem(
                                 )
                             )
                         }
-                        onDragEnd(currentIndex)
+                        onDragEnd(dragStartIndex)
                     }
                 )
             },
